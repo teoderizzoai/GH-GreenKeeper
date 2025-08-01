@@ -2,7 +2,7 @@ name: Daily Poetic Motivation
 
 on:
   schedule:
-    - cron: '0 7 * * *'  # 9 AM Amsterdam time (UTC+2)
+    - cron: '0 */6 * * *'  # Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
   workflow_dispatch:
 
 permissions:
@@ -35,60 +35,53 @@ jobs:
             sudo apt-get update && sudo apt-get install -y jq
           fi
           
+          # Randomize the contribution pattern for more natural-looking green squares
+          # 15% chance to skip this run entirely (like real life)
+          SKIP_CHANCE=$((RANDOM % 100))
+          if [ $SKIP_CHANCE -lt 15 ]; then
+            echo "Randomly skipping this run (15% chance) - just like real life!"
+            echo "SKIP_RUN=true" >> $GITHUB_ENV
+            exit 0
+          fi
+          
+          # Determine number of commits for this run (1-4 commits)
+          COMMIT_COUNT=$((RANDOM % 4 + 1))
+          echo "Will make $COMMIT_COUNT commit(s) this run"
+          echo "COMMIT_COUNT=$COMMIT_COUNT" >> $GITHUB_ENV
+          
           # Check if API key is available
           if [ -z "${{ secrets.OPENROUTER_API_KEY }}" ]; then
             echo "Error: OPENROUTER_API_KEY secret is not set"
             exit 1
           fi
           
-          echo "Making API request to OpenRouter..."
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" https://openrouter.ai/api/v1/chat/completions \
-            -H "Authorization: Bearer ${{ secrets.OPENROUTER_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "model": "openchat/openchat-7b:free",
-              "messages": [
-                {"role": "user", "content": "Generate a unique, inspiring motivational quote for someone working on a long-term project. Make it creative, varied, and under 30 words. Avoid generic phrases. Make each quote feel fresh and original."}
-              ],
-              "temperature": 0.9,
-              "max_tokens": 100
-            }' || echo -e "\nHTTP_STATUS:000")
-          
-          # Extract HTTP status and response body
-          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1 | sed 's/.*HTTP_STATUS://')
-          RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
-          
-          echo "HTTP Status: $HTTP_STATUS"
-          echo "API Response: $RESPONSE_BODY"
-          
-          # Check if the request was successful
-          if [ "$HTTP_STATUS" != "200" ]; then
-            echo "Error: API request failed with status $HTTP_STATUS"
-            echo "Using fallback message..."
-            # Generate a random fallback message
-            FALLBACK_MESSAGES=(
-              "Every line of code is a step toward your dreams. Keep building."
-              "Your persistence today shapes tomorrow'\''s success. Stay focused."
-              "In the quiet of creation, magic happens. Trust the process."
-              "Small progress compounds into extraordinary results. Keep going."
-              "Your dedication is the foundation of achievement. Build wisely."
-              "Every challenge overcome makes you stronger. Embrace the journey."
-              "The best code is written one function at a time. Stay patient."
-              "Your vision becomes reality through consistent action. Keep coding."
-              "Innovation happens in the space between comfort and chaos."
-              "Every bug fixed is a lesson learned. Grow through debugging."
-            )
-            RANDOM_INDEX=$((RANDOM % ${#FALLBACK_MESSAGES[@]}))
-            MESSAGE="${FALLBACK_MESSAGES[$RANDOM_INDEX]}"
-          else
-            # Try to extract the message
-            MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty')
+          # Generate multiple messages for multiple commits
+          for ((i=1; i<=$COMMIT_COUNT; i++)); do
+            echo "Generating message $i of $COMMIT_COUNT..."
             
-            # Validate the message
-            if [ "$MESSAGE" = "null" ] || [ -z "$MESSAGE" ]; then
-              echo "Error: Failed to extract message from API response"
-              echo "Full response for debugging:"
-              echo "$RESPONSE_BODY" | jq .
+            echo "Making API request to OpenRouter..."
+            RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" https://openrouter.ai/api/v1/chat/completions \
+              -H "Authorization: Bearer ${{ secrets.OPENROUTER_API_KEY }}" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "model": "openchat/openchat-7b:free",
+                "messages": [
+                  {"role": "user", "content": "Generate a unique, inspiring motivational quote for someone working on a long-term project. Make it creative, varied, and under 30 words. Avoid generic phrases. Make each quote feel fresh and original."}
+                ],
+                "temperature": 0.9,
+                "max_tokens": 100
+              }' || echo -e "\nHTTP_STATUS:000")
+            
+            # Extract HTTP status and response body
+            HTTP_STATUS=$(echo "$RESPONSE" | tail -n1 | sed 's/.*HTTP_STATUS://')
+            RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+            
+            echo "HTTP Status: $HTTP_STATUS"
+            echo "API Response: $RESPONSE_BODY"
+            
+            # Check if the request was successful
+            if [ "$HTTP_STATUS" != "200" ]; then
+              echo "Error: API request failed with status $HTTP_STATUS"
               echo "Using fallback message..."
               # Generate a random fallback message
               FALLBACK_MESSAGES=(
@@ -105,26 +98,67 @@ jobs:
               )
               RANDOM_INDEX=$((RANDOM % ${#FALLBACK_MESSAGES[@]}))
               MESSAGE="${FALLBACK_MESSAGES[$RANDOM_INDEX]}"
+            else
+              # Try to extract the message
+              MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty')
+              
+              # Validate the message
+              if [ "$MESSAGE" = "null" ] || [ -z "$MESSAGE" ]; then
+                echo "Error: Failed to extract message from API response"
+                echo "Full response for debugging:"
+                echo "$RESPONSE_BODY" | jq .
+                echo "Using fallback message..."
+                # Generate a random fallback message
+                FALLBACK_MESSAGES=(
+                  "Every line of code is a step toward your dreams. Keep building."
+                  "Your persistence today shapes tomorrow'\''s success. Stay focused."
+                  "In the quiet of creation, magic happens. Trust the process."
+                  "Small progress compounds into extraordinary results. Keep going."
+                  "Your dedication is the foundation of achievement. Build wisely."
+                  "Every challenge overcome makes you stronger. Embrace the journey."
+                  "The best code is written one function at a time. Stay patient."
+                  "Your vision becomes reality through consistent action. Keep coding."
+                  "Innovation happens in the space between comfort and chaos."
+                  "Every bug fixed is a lesson learned. Grow through debugging."
+                )
+                RANDOM_INDEX=$((RANDOM % ${#FALLBACK_MESSAGES[@]}))
+                MESSAGE="${FALLBACK_MESSAGES[$RANDOM_INDEX]}"
+              fi
             fi
-          fi
-          
-          echo "Generated message: $MESSAGE"
-          
-          # Check if this message was recently added (last 5 entries)
-          if [ -f "progress.md" ]; then
-            RECENT_MESSAGES=$(tail -10 progress.md | grep -o "**: .*" | sed 's/**: //')
-            if echo "$RECENT_MESSAGES" | grep -q "$MESSAGE"; then
-              echo "Warning: Similar message found recently, but continuing with current message"
+            
+            echo "Generated message $i: $MESSAGE"
+            
+            # Check if this message was recently added (last 10 entries)
+            if [ -f "progress.md" ]; then
+              RECENT_MESSAGES=$(tail -10 progress.md | grep -o "**: .*" | sed 's/**: //')
+              if echo "$RECENT_MESSAGES" | grep -q "$MESSAGE"; then
+                echo "Warning: Similar message found recently, but continuing with current message"
+              fi
             fi
-          fi
-          
-          # Format the date nicely and add to progress.md
-          CURRENT_DATE=$(date '+%Y-%m-%d %H:%M:%S')
-          echo "- **$CURRENT_DATE**: $MESSAGE" >> progress.md
-          echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
+            
+            # Format the date nicely and add to progress.md
+            CURRENT_DATE=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "- **$CURRENT_DATE**: $MESSAGE" >> progress.md
+            
+            # Store message for this iteration
+            if [ $i -eq 1 ]; then
+              echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
+            fi
+            
+            # Small delay between API calls to be respectful
+            if [ $i -lt $COMMIT_COUNT ]; then
+              sleep 2
+            fi
+          done
 
       - name: Commit and push
         run: |
+          # Check if we should skip this run
+          if [ "$SKIP_RUN" = "true" ]; then
+            echo "Skipping commit and push as this run was randomly skipped"
+            exit 0
+          fi
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
