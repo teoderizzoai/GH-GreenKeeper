@@ -29,7 +29,20 @@ jobs:
 
       - name: Generate poetic motivation with OpenRouter
         run: |
-          RESPONSE=$(curl -s https://openrouter.ai/api/v1/chat/completions \
+          # Install jq if not available
+          if ! command -v jq &> /dev/null; then
+            echo "Installing jq..."
+            sudo apt-get update && sudo apt-get install -y jq
+          fi
+          
+          # Check if API key is available
+          if [ -z "${{ secrets.OPENROUTER_API_KEY }}" ]; then
+            echo "Error: OPENROUTER_API_KEY secret is not set"
+            exit 1
+          fi
+          
+          echo "Making API request to OpenRouter..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" https://openrouter.ai/api/v1/chat/completions \
             -H "Authorization: Bearer ${{ secrets.OPENROUTER_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{
@@ -37,17 +50,32 @@ jobs:
               "messages": [
                 {"role": "user", "content": "Write a short, poetic motivational message to inspire someone working alone on a long-term creative or technical project. Keep it under 25 words."}
               ]
-            }')
+            }' || echo -e "\nHTTP_STATUS:000")
           
-          # Debug the API response
-          echo "API Response: $RESPONSE"
+          # Extract HTTP status and response body
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1 | sed 's/.*HTTP_STATUS://')
+          RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
           
-          MESSAGE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "API Response: $RESPONSE_BODY"
           
-          # Validate the message
-          if [ "$MESSAGE" = "null" ] || [ -z "$MESSAGE" ]; then
-            echo "Error: Failed to extract message from API response"
-            exit 1
+          # Check if the request was successful
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "Error: API request failed with status $HTTP_STATUS"
+            echo "Using fallback message..."
+            MESSAGE="Keep pushing forward, one step at a time. Your persistence will lead to success."
+          else
+            # Try to extract the message
+            MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty')
+            
+            # Validate the message
+            if [ "$MESSAGE" = "null" ] || [ -z "$MESSAGE" ]; then
+              echo "Error: Failed to extract message from API response"
+              echo "Full response for debugging:"
+              echo "$RESPONSE_BODY" | jq .
+              echo "Using fallback message..."
+              MESSAGE="Keep pushing forward, one step at a time. Your persistence will lead to success."
+            fi
           fi
           
           echo "Generated message: $MESSAGE"
