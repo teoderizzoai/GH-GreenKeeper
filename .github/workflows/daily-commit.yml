@@ -48,8 +48,10 @@ jobs:
             -d '{
               "model": "openchat/openchat-7b:free",
               "messages": [
-                {"role": "user", "content": "Write a short, poetic motivational message to inspire someone working alone on a long-term creative or technical project. Keep it under 25 words."}
-              ]
+                {"role": "user", "content": "Generate a unique, inspiring motivational quote for someone working on a long-term project. Make it creative, varied, and under 30 words. Avoid generic phrases. Make each quote feel fresh and original."}
+              ],
+              "temperature": 0.9,
+              "max_tokens": 100
             }' || echo -e "\nHTTP_STATUS:000")
           
           # Extract HTTP status and response body
@@ -63,7 +65,21 @@ jobs:
           if [ "$HTTP_STATUS" != "200" ]; then
             echo "Error: API request failed with status $HTTP_STATUS"
             echo "Using fallback message..."
-            MESSAGE="Keep pushing forward, one step at a time. Your persistence will lead to success."
+            # Generate a random fallback message
+            FALLBACK_MESSAGES=(
+              "Every line of code is a step toward your dreams. Keep building."
+              "Your persistence today shapes tomorrow'\''s success. Stay focused."
+              "In the quiet of creation, magic happens. Trust the process."
+              "Small progress compounds into extraordinary results. Keep going."
+              "Your dedication is the foundation of achievement. Build wisely."
+              "Every challenge overcome makes you stronger. Embrace the journey."
+              "The best code is written one function at a time. Stay patient."
+              "Your vision becomes reality through consistent action. Keep coding."
+              "Innovation happens in the space between comfort and chaos."
+              "Every bug fixed is a lesson learned. Grow through debugging."
+            )
+            RANDOM_INDEX=$((RANDOM % ${#FALLBACK_MESSAGES[@]}))
+            MESSAGE="${FALLBACK_MESSAGES[$RANDOM_INDEX]}"
           else
             # Try to extract the message
             MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty')
@@ -74,12 +90,37 @@ jobs:
               echo "Full response for debugging:"
               echo "$RESPONSE_BODY" | jq .
               echo "Using fallback message..."
-              MESSAGE="Keep pushing forward, one step at a time. Your persistence will lead to success."
+              # Generate a random fallback message
+              FALLBACK_MESSAGES=(
+                "Every line of code is a step toward your dreams. Keep building."
+                "Your persistence today shapes tomorrow'\''s success. Stay focused."
+                "In the quiet of creation, magic happens. Trust the process."
+                "Small progress compounds into extraordinary results. Keep going."
+                "Your dedication is the foundation of achievement. Build wisely."
+                "Every challenge overcome makes you stronger. Embrace the journey."
+                "The best code is written one function at a time. Stay patient."
+                "Your vision becomes reality through consistent action. Keep coding."
+                "Innovation happens in the space between comfort and chaos."
+                "Every bug fixed is a lesson learned. Grow through debugging."
+              )
+              RANDOM_INDEX=$((RANDOM % ${#FALLBACK_MESSAGES[@]}))
+              MESSAGE="${FALLBACK_MESSAGES[$RANDOM_INDEX]}"
             fi
           fi
           
           echo "Generated message: $MESSAGE"
-          echo "$(date): $MESSAGE" >> progress.md
+          
+          # Check if this message was recently added (last 5 entries)
+          if [ -f "progress.md" ]; then
+            RECENT_MESSAGES=$(tail -10 progress.md | grep -o "**: .*" | sed 's/**: //')
+            if echo "$RECENT_MESSAGES" | grep -q "$MESSAGE"; then
+              echo "Warning: Similar message found recently, but continuing with current message"
+            fi
+          fi
+          
+          # Format the date nicely and add to progress.md
+          CURRENT_DATE=$(date '+%Y-%m-%d %H:%M:%S')
+          echo "- **$CURRENT_DATE**: $MESSAGE" >> progress.md
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
 
       - name: Commit and push
