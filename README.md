@@ -2,6 +2,10 @@
 
 *Because apparently, a green GitHub profile is the new LinkedIn premium*
 
+![GitHub Contribution Graph Example](https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fexirmgixmnkgwo40q1ig.PNG)
+
+*This is what your contribution graph could look like with GH-GreenKeeper - a beautiful, natural-looking pattern of green squares!*
+
 ## What is this madness?
 
 Welcome to **GH-GreenKeeper**, the most sophisticated solution to the most trivial problem: keeping your GitHub contribution graph looking like a lush, verdant forest. 
