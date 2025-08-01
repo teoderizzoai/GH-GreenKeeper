@@ -1,0 +1,33 @@
+name: LLM-Generated Fake Progress
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # 9 AM Amsterdam time (UTC+2)
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate message using OpenRouter
+        run: |
+          RESPONSE=$(curl -s https://openrouter.ai/api/v1/chat/completions \
+            -H "Authorization: Bearer ${{ secrets.OPENROUTER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "openchat/openchat-7b:free",
+              "messages": [{"role": "user", "content": "Write a short, unique, poetic motivational message to inspire someone working alone on a long-term creative or technical project."}]
+            }')
+          MESSAGE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+          echo "$(date): $MESSAGE" >> progress.md
+
+      - name: Commit and push
+        run: |
+          git config user.name "teoderizzoai"
+          git config user.email "teo.derizzo.ai@gmail.com"
+          git add progress.md
+          git commit -m "Auto: $MESSAGE"
+          git push
