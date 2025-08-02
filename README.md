@@ -19,8 +19,8 @@ This project automatically plants trees in your repository 4 times a day, ensuri
 - **🌴 Variable Forest Density**: 1-4 trees per run for different shades of green
 - **🌵 Realistic Seasons**: 15% chance to skip runs (even forests need rest!)
 - **🎄 Forest Variety**: 2 different tree types (🌲 evergreen, 🌳 deciduous)
-- **🎋 Growing Forests**: Multiple trees per commit creating mini ecosystems
-- **🎍 Clean Format**: Simple forest entries without clutter
+- **🎋 Perfect Lines**: Exactly 20 trees per line for uniform forest rows
+- **🎍 Random Shuffling**: Trees are randomly shuffled for natural forest patterns
 - **🎎 Sustainable Growth**: Because even digital forests need care
 
 ## 🚀 How the forest grows
@@ -48,16 +48,13 @@ This project automatically plants trees in your repository 4 times a day, ensuri
 
 Your `progress.md` will look something like this:
 
-```markdown
-# Your forest
-
-- 🌲 🌳 🌲 🌳 🌲
-- 🌳 🌲 🌳 🌲
-- 🌲 🌳 🌲
-- 🌳 🌲 🌳 🌲 🌲 🌳
+```
+- 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳
+- 🌳 🌲 🌲 🌳 🌲 🌳 🌲 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲
+- 🌲 🌳 🌳 🌲 🌳 🌲 🌳 🌲 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳
 ```
 
-*Note: Some runs might be skipped (15% chance), and some might have multiple trees, creating a natural-looking contribution pattern with growing forests of 🌲 and 🌳 trees!*
+*Note: Each line will have exactly 20 trees. New trees are added to existing lines until they reach 20, then a new line is started. Trees are randomly shuffled for natural forest patterns. Some runs might be skipped (15% chance), creating natural gaps in your forest growth!*
 
 ## 🌲 The Tree Types
 

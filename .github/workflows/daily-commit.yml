@@ -37,30 +37,54 @@ jobs:
             TREE_COUNT=$((RANDOM % 4 + 1))
             
             # Generate forest by combining random tree emojis
-            FOREST=""
             for ((j=1; j<=$TREE_COUNT; j++)); do
-              # Select random tree emoji
+              # Select random tree emoji with true randomness
               TREE_INDEX=$((RANDOM % ${#TREES[@]}))
               TREE="${TREES[$TREE_INDEX]}"
               
-              if [ $j -eq 1 ]; then
-                FOREST="$TREE"
+              # Add to all trees with space separator
+              if [ -z "$ALL_TREES" ]; then
+                ALL_TREES="$TREE"
               else
-                # Add space between trees
-                FOREST="$FOREST $TREE"
+                ALL_TREES="$ALL_TREES $TREE"
               fi
             done
-            
-            # Add to all trees with space separator
-            if [ $i -eq 1 ]; then
-              ALL_TREES="$FOREST"
-            else
-              ALL_TREES="$ALL_TREES $FOREST"
-            fi
           done
           
-          # Add all trees to file in one line
-          echo "- $ALL_TREES" >> progress.md
+          # Shuffle the final tree sequence for more natural randomness
+          SHUFFLED_TREES=$(echo "$ALL_TREES" | tr ' ' '\n' | shuf | tr '\n' ' ' | sed 's/ $//')
+          ALL_TREES="$SHUFFLED_TREES"
+          
+          # Check if progress.md exists and get the last line
+          if [ -f "progress.md" ]; then
+            LAST_LINE=$(tail -n 1 progress.md 2>/dev/null || echo "")
+            
+            # If last line starts with "- " and has less than 20 trees, add to it
+            if [[ "$LAST_LINE" =~ ^- ]] && [[ $(echo "$LAST_LINE" | wc -w) -lt 20 ]]; then
+              # Remove the "- " prefix and count existing trees
+              EXISTING_TREES=$(echo "$LAST_LINE" | sed 's/^- //')
+              EXISTING_COUNT=$(echo "$EXISTING_TREES" | wc -w)
+              
+              # Calculate how many trees we can add to this line
+              REMAINING_SPACE=$((20 - EXISTING_COUNT))
+              TREES_TO_ADD=$(echo "$ALL_TREES" | cut -d' ' -f1-$REMAINING_SPACE)
+              
+              # Update the last line
+              sed -i '$s/.*/- '"$EXISTING_TREES $TREES_TO_ADD"'/' progress.md
+              
+              # If we have more trees than can fit, start a new line
+              if [ $(echo "$ALL_TREES" | wc -w) -gt $REMAINING_SPACE ]; then
+                REMAINING_TREES=$(echo "$ALL_TREES" | cut -d' ' -f$((REMAINING_SPACE + 1))-)
+                echo "- $REMAINING_TREES" >> progress.md
+              fi
+            else
+              # Start a new line
+              echo "- $ALL_TREES" >> progress.md
+            fi
+          else
+            # File doesn't exist, start fresh
+            echo "- $ALL_TREES" >> progress.md
+          fi
           
           # Commit all trees at once
           git config user.name "github-actions[bot]"
