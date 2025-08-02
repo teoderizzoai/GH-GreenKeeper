@@ -49,7 +49,7 @@ This project automatically plants trees in your repository 4 times a day, ensuri
 Your `progress.md` will look something like this:
 
 ```markdown
-# Daily Motivational Message
+# Your forest
 
 - 🌲 🌳 🌲 🌳 🌲
 - 🌳 🌲 🌳 🌲
