@@ -27,61 +27,46 @@ jobs:
           COMMIT_COUNT=$((RANDOM % 4 + 1))
           echo "Will make $COMMIT_COUNT commit(s)"
           
-          # Fallback messages array
-          FALLBACK_MESSAGES=(
-            "Every line of code is a step toward your dreams. Keep building."
-            "Your persistence today shapes tomorrow's success. Stay focused."
-            "In the quiet of creation, magic happens. Trust the process."
-            "Small progress compounds into extraordinary results. Keep going."
-            "Your dedication is the foundation of achievement. Build wisely."
-            "Every challenge overcome makes you stronger. Embrace the journey."
-            "The best code is written one function at a time. Stay patient."
-            "Your vision becomes reality through consistent action. Keep coding."
-            "Innovation happens in the space between comfort and chaos."
-            "Every bug fixed is a lesson learned. Grow through debugging."
-          )
+          # Tree emoji variations
+          TREES=("🌲" "🌳")
           
-          # Generate messages and commit
+          # Generate all trees for this run
+          ALL_TREES=""
           for ((i=1; i<=$COMMIT_COUNT; i++)); do
-            # Try to get AI message, fallback if failed
-            if [ -n "${{ secrets.OPENROUTER_API_KEY }}" ]; then
-              RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" https://openrouter.ai/api/v1/chat/completions \
-                -H "Authorization: Bearer ${{ secrets.OPENROUTER_API_KEY }}" \
-                -H "Content-Type: application/json" \
-                -d '{
-                  "model": "openchat/openchat-7b:free",
-                  "messages": [
-                    {"role": "user", "content": "Generate a unique, inspiring motivational quote for someone working on a long-term project. Make it creative, varied, and under 30 words. Avoid generic phrases. Make each quote feel fresh and original."}
-                  ],
-                  "temperature": 0.9,
-                  "max_tokens": 100
-                }' 2>/dev/null || echo -e "\nHTTP_STATUS:000")
+            # Determine number of trees in this forest (1-4)
+            TREE_COUNT=$((RANDOM % 4 + 1))
+            
+            # Generate forest by combining random tree emojis
+            FOREST=""
+            for ((j=1; j<=$TREE_COUNT; j++)); do
+              # Select random tree emoji
+              TREE_INDEX=$((RANDOM % ${#TREES[@]}))
+              TREE="${TREES[$TREE_INDEX]}"
               
-              HTTP_STATUS=$(echo "$RESPONSE" | tail -n1 | sed 's/.*HTTP_STATUS://')
-              RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
-              
-              if [ "$HTTP_STATUS" = "200" ]; then
-                MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty' 2>/dev/null)
+              if [ $j -eq 1 ]; then
+                FOREST="$TREE"
+              else
+                # Add space between trees
+                FOREST="$FOREST $TREE"
               fi
+            done
+            
+            # Add to all trees with space separator
+            if [ $i -eq 1 ]; then
+              ALL_TREES="$FOREST"
+            else
+              ALL_TREES="$ALL_TREES $FOREST"
             fi
-            
-            # Use fallback if AI failed or no API key
-            if [ -z "$MESSAGE" ] || [ "$MESSAGE" = "null" ]; then
-              MESSAGE="${FALLBACK_MESSAGES[$((RANDOM % ${#FALLBACK_MESSAGES[@]}))]}"
-            fi
-            
-            # Add message to file
-            echo "- **$(date '+%Y-%m-%d %H:%M:%S')**: $MESSAGE" >> progress.md
-            
-            # Commit this message
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add progress.md
-            git commit -m "Auto: $MESSAGE" || echo "No changes to commit"
-            
-            # Small delay between commits
-            [ $i -lt $COMMIT_COUNT ] && sleep 2
           done
+          
+          # Add all trees to file in one line
+          echo "- $ALL_TREES" >> progress.md
+          
+          # Commit all trees at once
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add progress.md
+          git commit -m "🌲 Auto: Growing forest" || echo "No changes to commit"
           
           # Push all commits
           git push || echo "Push failed"
