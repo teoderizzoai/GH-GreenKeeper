@@ -87,8 +87,8 @@ jobs:
           fi
           
           # Commit all trees at once
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "teoderizzoai"
+          git config user.email "teo.derizzo.ai@gmail.com"
           git add progress.md
           git commit -m "🌲 Auto: Growing forest" || echo "No changes to commit"
           
