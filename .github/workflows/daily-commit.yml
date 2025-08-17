@@ -15,82 +15,64 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Generate and commit motivation
+      - name: Generate and commit trees
         run: |
-          # 15% chance to skip this run
-          if [ $((RANDOM % 100)) -lt 15 ]; then
-            echo "Randomly skipping this run (15% chance)"
+          # Determine number of commits for this session (0-4)
+          # This represents how many trees we'll plant in this 6-hour period
+          COMMIT_COUNT=$((RANDOM % 5))  # 0, 1, 2, 3, or 4
+          echo "Will make $COMMIT_COUNT commit(s) in this session"
+          
+          # If no commits, just exit (no trees planted this session)
+          if [ $COMMIT_COUNT -eq 0 ]; then
+            echo "No trees to plant this session - taking a break!"
             exit 0
           fi
           
-          # Determine number of commits (1-4)
-          COMMIT_COUNT=$((RANDOM % 4 + 1))
-          echo "Will make $COMMIT_COUNT commit(s)"
-          
-          # Tree emoji variations
+          # Tree emoji variations for visual variety
           TREES=("🌲" "🌳")
           
-          # Generate all trees for this run
-          ALL_TREES=""
+          # Make each commit individually, adding one tree per commit
           for ((i=1; i<=$COMMIT_COUNT; i++)); do
-            # Determine number of trees in this forest (1-4)
-            TREE_COUNT=$((RANDOM % 4 + 1))
+            echo "Making commit $i of $COMMIT_COUNT..."
             
-            # Generate forest by combining random tree emojis
-            for ((j=1; j<=$TREE_COUNT; j++)); do
-              # Select random tree emoji with true randomness
-              TREE_INDEX=$((RANDOM % ${#TREES[@]}))
-              TREE="${TREES[$TREE_INDEX]}"
+            # Select a random tree emoji for this commit
+            TREE_INDEX=$((RANDOM % ${#TREES[@]}))
+            TREE="${TREES[$TREE_INDEX]}"
+            
+            # Check if progress.md exists and get the last line
+            if [ -f "progress.md" ]; then
+              LAST_LINE=$(tail -n 1 progress.md 2>/dev/null || echo "")
               
-              # Add to all trees with space separator
-              if [ -z "$ALL_TREES" ]; then
-                ALL_TREES="$TREE"
+              # If last line starts with "- " and has less than 20 trees, add to it
+              if [[ "$LAST_LINE" =~ ^- ]] && [[ $(echo "$LAST_LINE" | wc -w) -lt 20 ]]; then
+                # Remove the "- " prefix and add the new tree
+                EXISTING_TREES=$(echo "$LAST_LINE" | sed 's/^- //')
+                UPDATED_TREES="$EXISTING_TREES $TREE"
+                
+                # Update the last line with the new tree
+                sed -i '$s/.*/- '"$UPDATED_TREES"'/' progress.md
               else
-                ALL_TREES="$ALL_TREES $TREE"
-              fi
-            done
-          done
-          
-          # Shuffle the final tree sequence for more natural randomness
-          SHUFFLED_TREES=$(echo "$ALL_TREES" | tr ' ' '\n' | shuf | tr '\n' ' ' | sed 's/ $//')
-          ALL_TREES="$SHUFFLED_TREES"
-          
-          # Check if progress.md exists and get the last line
-          if [ -f "progress.md" ]; then
-            LAST_LINE=$(tail -n 1 progress.md 2>/dev/null || echo "")
-            
-            # If last line starts with "- " and has less than 20 trees, add to it
-            if [[ "$LAST_LINE" =~ ^- ]] && [[ $(echo "$LAST_LINE" | wc -w) -lt 20 ]]; then
-              # Remove the "- " prefix and count existing trees
-              EXISTING_TREES=$(echo "$LAST_LINE" | sed 's/^- //')
-              EXISTING_COUNT=$(echo "$EXISTING_TREES" | wc -w)
-              
-              # Calculate how many trees we can add to this line
-              REMAINING_SPACE=$((20 - EXISTING_COUNT))
-              TREES_TO_ADD=$(echo "$ALL_TREES" | cut -d' ' -f1-$REMAINING_SPACE)
-              
-              # Update the last line
-              sed -i '$s/.*/- '"$EXISTING_TREES $TREES_TO_ADD"'/' progress.md
-              
-              # If we have more trees than can fit, start a new line
-              if [ $(echo "$ALL_TREES" | wc -w) -gt $REMAINING_SPACE ]; then
-                REMAINING_TREES=$(echo "$ALL_TREES" | cut -d' ' -f$((REMAINING_SPACE + 1))-)
-                echo "- $REMAINING_TREES" >> progress.md
+                # Start a new line with just this tree
+                echo "- $TREE" >> progress.md
               fi
             else
-              # Start a new line
-              echo "- $ALL_TREES" >> progress.md
+              # File doesn't exist, start fresh with this tree
+              echo "- $TREE" >> progress.md
             fi
-          else
-            # File doesn't exist, start fresh
-            echo "- $ALL_TREES" >> progress.md
-          fi
+            
+            # Configure git for this commit
+            git config user.name "teoderizzoai"
+            git config user.email "teo.derizzo.ai@gmail.com"
+            
+            # Add and commit this single tree
+            git add progress.md
+            git commit -m "🌲 Auto: Planted tree #$i of $COMMIT_COUNT" || echo "No changes to commit"
+            
+            echo "Committed tree $i: $TREE"
+          done
           
-          # Commit all trees at once
-          git config user.name "teoderizzoai"
-          git config user.email "teo.derizzo.ai@gmail.com"
-          git add progress.md
-          git commit -m "🌲 Auto: Growing forest" || echo "No changes to commit"
-          
-          # Push all commits
+          # Push all commits at once
+          echo "Pushing $COMMIT_COUNT commits..."
           git push || echo "Push failed"
+          
+          echo "Session complete! Planted $COMMIT_COUNT trees across $COMMIT_COUNT commits."

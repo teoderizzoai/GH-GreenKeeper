@@ -15,21 +15,21 @@ This project automatically plants trees in your repository 4 times a day, ensuri
 ## 🎯 Features
 
 - **🌲 Tree Emoji Forests**: Plants beautiful tree emojis instead of boring text
-- **🌳 Natural Growth Pattern**: Randomizes commits to create realistic green squares
-- **🌴 Variable Forest Density**: 1-4 trees per run for different shades of green
-- **🌵 Realistic Seasons**: 15% chance to skip runs (even forests need rest!)
+- **🌳 Natural Growth Pattern**: Each commit adds exactly one tree for consistent green squares
+- **🌴 Variable Session Activity**: 0-4 commits per 6-hour session for realistic activity patterns
+- **🌵 Sustainable Growth**: Each tree gets its own commit, creating authentic contribution history
 - **🎄 Forest Variety**: 2 different tree types (🌲 evergreen, 🌳 deciduous)
 - **🎋 Perfect Lines**: Exactly 20 trees per line for uniform forest rows
-- **🎍 Random Shuffling**: Trees are randomly shuffled for natural forest patterns
-- **🎎 Sustainable Growth**: Because even digital forests need care
+- **🎍 Individual Commits**: Each tree is committed separately for maximum GitHub activity
+- **🎎 Realistic Timing**: 4 sessions per day, but not every session needs to be active
 
 ## 🚀 How the forest grows
 
 1. **🌱 GitHub Actions** runs every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
-2. **🌿 Randomization Engine** decides whether to plant (85% chance) or rest (15% chance)
-3. **🌳 Tree Generator** creates forests with 1-4 trees per run
-4. **🌲 Forest Variety** randomly selects from 2 different tree types
-5. **🌴 Auto-planting** adds forests to `progress.md` with natural timing
+2. **🌿 Session Planning** decides how many commits to make (0, 1, 2, 3, or 4)
+3. **🌳 Individual Planting** creates one commit per tree, each adding exactly one tree
+4. **🌲 Forest Variety** randomly selects from 2 different tree types for each tree
+5. **🌴 Auto-planting** adds trees to `progress.md` with natural timing
 6. **🌱 Your profile** becomes a growing digital forest on GitHub!
 
 ## 📋 Requirements
@@ -54,7 +54,7 @@ Your `progress.md` will look something like this:
 - 🌲 🌳 🌳 🌲 🌳 🌲 🌳 🌲 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳 🌲 🌳
 ```
 
-*Note: Each line will have exactly 20 trees. New trees are added to existing lines until they reach 20, then a new line is started. Trees are randomly shuffled for natural forest patterns. Some runs might be skipped (15% chance), creating natural gaps in your forest growth!*
+*Note: Each line will have exactly 20 trees. New trees are added to existing lines until they reach 20, then a new line is started. Each tree gets its own commit, creating authentic GitHub activity!*
 
 ## 🌲 The Tree Types
 
@@ -76,9 +76,19 @@ This project is a playful commentary on that reality. It's like planting a garde
 
 - **Language**: YAML (GitHub Actions)
 - **Schedule**: Cron job every 6 hours
-- **Forest Generation**: Random tree selection and placement
-- **Commit Strategy**: Single commit per run with all trees
+- **Commit Strategy**: 0-4 commits per session, each adding exactly 1 tree
+- **Forest Generation**: Random tree selection, one per commit
+- **Activity Pattern**: Realistic variation in daily activity (0-16 commits per day)
 - **Error Handling**: Graceful fallback if anything goes wrong
+
+## 📊 Daily Activity Patterns
+
+With 4 sessions per day and 0-4 commits per session, your daily activity will vary naturally:
+- **Minimum**: 0 commits (all sessions decide to rest)
+- **Maximum**: 16 commits (all sessions make 4 commits each)
+- **Typical**: 6-10 commits (realistic developer activity patterns)
+
+This creates authentic-looking GitHub activity that doesn't look too robotic or predictable!
 
 ## 🤝 Contributing
 
